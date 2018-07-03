@@ -1,0 +1,8 @@
+addSbtPlugin("com.lucidchart" % "sbt-scalafmt-coursier" % "1.15")
+addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter" % "0.4.1")
+addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "latest.release")
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.0")
+//addSbtPlugin("org.duhemm" % "sbt-errors-summary" % "0.6.0")
+addSbtPlugin("com.thoughtworks.deeplearning" % "sbt-ammonite-classpath" % "latest.release")
+addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.3")
+addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "0.2.6")
