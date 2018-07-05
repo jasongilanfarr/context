@@ -1,6 +1,9 @@
 package org.thisamericandream.context
 
+import org.slf4j.MDC
+
 import scala.collection.immutable.HashMap
+import java.util
 
 case class ContextValue[+V] private (private[context] val v: Option[V]) extends AnyVal
 
@@ -39,22 +42,30 @@ object Context {
   }
 
   /** Run a given method with a specific context, restoring it after. Intended for async boundaries */
-  def withContext[R](ctx: ContextMap)(f: () => R): R = {
+  def withContext[R](ctx: ContextMap, mdc: Option[util.Map[String, String]])(f: () => R): R = {
     val old = tls.get()
+    val oldMdc = Option(MDC.getCopyOfContextMap)
     tls.set(ctx)
+    mdc.fold(MDC.clear())(MDC.setContextMap)
     try {
       f()
     } finally {
       tls.set(old)
+      oldMdc.fold(MDC.clear())(MDC.setContextMap)
     }
   }
 
   /** Run a given method with no context, restoring it after */
   def clearContext[R](f: () => R): R = {
     val old = tls.get()
+    val oldMdc = Option(MDC.getCopyOfContextMap)
+    MDC.clear()
     tls.remove()
-    val result = f()
-    tls.set(old)
-    result
+    try {
+      f()
+    } finally {
+      tls.set(old)
+      oldMdc.fold(MDC.clear())(MDC.setContextMap)
+    }
   }
 }

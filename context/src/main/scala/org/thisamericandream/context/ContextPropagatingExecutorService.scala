@@ -3,6 +3,8 @@ package org.thisamericandream.context
 import java.util
 import java.util.concurrent._
 
+import org.slf4j.MDC
+
 /** ExecutorService that propagates the [[Context]] */
 case class ContextPropagatingExecutorService(service: ExecutorService) extends AbstractExecutorService {
   override def shutdown(): Unit = service.shutdown()
@@ -17,8 +19,9 @@ case class ContextPropagatingExecutorService(service: ExecutorService) extends A
 
   override def execute(command: Runnable): Unit = {
     val ctx = Context.get()
+    val mdc = Option(MDC.getCopyOfContextMap)
     service.execute(() => {
-      Context.withContext(ctx)(() => command.run())
+      Context.withContext(ctx, mdc)(() => command.run())
     })
   }
 }
@@ -38,7 +41,8 @@ case class ContextPropagatingScheduledScheduledExecutorService(service: Schedule
                                    period: Long,
                                    unit: TimeUnit): ScheduledFuture[_] = {
     val ctx = Context.get()
-    service.scheduleAtFixedRate(() => Context.withContext(ctx)(() => command.run()), initialDelay, period, unit)
+    val mdc = Option(MDC.getCopyOfContextMap)
+    service.scheduleAtFixedRate(() => Context.withContext(ctx, mdc)(() => command.run()), initialDelay, period, unit)
   }
 
   override def scheduleWithFixedDelay(command: Runnable,
@@ -46,7 +50,8 @@ case class ContextPropagatingScheduledScheduledExecutorService(service: Schedule
                                       delay: Long,
                                       unit: TimeUnit): ScheduledFuture[_] = {
     val ctx = Context.get()
-    service.scheduleWithFixedDelay(() => Context.withContext(ctx)(() => command.run()), initialDelay, delay, unit)
+    val mdc = Option(MDC.getCopyOfContextMap)
+    service.scheduleWithFixedDelay(() => Context.withContext(ctx, mdc)(() => command.run()), initialDelay, delay, unit)
   }
 
   override def shutdown(): Unit = service.shutdown()
@@ -61,6 +66,7 @@ case class ContextPropagatingScheduledScheduledExecutorService(service: Schedule
 
   override def execute(command: Runnable): Unit = {
     val ctx = Context.get()
-    service.execute(() => Context.withContext(ctx)(() => command.run()))
+    val mdc = Option(MDC.getCopyOfContextMap)
+    service.execute(() => Context.withContext(ctx, mdc)(() => command.run()))
   }
 }

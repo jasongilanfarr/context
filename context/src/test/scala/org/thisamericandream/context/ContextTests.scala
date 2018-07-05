@@ -1,5 +1,9 @@
 package org.thisamericandream.context
 
+import org.slf4j.MDC
+
+import scala.concurrent.{Future, Promise}
+
 class ContextTests extends Spec {
   case object Key extends ContextKey[String]
 
@@ -28,6 +32,24 @@ class ContextTests extends Spec {
       }
       childResult shouldBe None
       parentResult.value should equal("parent")
+    }
+    "propagate MDC" in {
+      MDC.put("mdcKey", "key")
+      val promise = Promise[Option[String]]()
+      Future {
+        promise.success(Option(MDC.get("mdcKey")))
+      }
+      whenReady(promise.future)(_.value should be ("key"))
+    }
+    "clearing context clears MDC" in {
+      MDC.put("mdcKey", "key")
+      val promise = Promise[Option[String]]()
+      Context.clearContext(() =>
+        Future {
+          promise.success(Option(MDC.get("mdcKey")))
+        }
+      )
+      whenReady(promise.future)(_ shouldBe None)
     }
   }
 }

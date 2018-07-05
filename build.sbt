@@ -4,6 +4,8 @@ enablePlugins(GitVersioning, GitBranchPrompt)
 val commonSettings = Seq(
   libraryDependencies := Seq(
     "org.scala-lang" % "scala-library" % scalaVersion.value,
+    "org.slf4j" % "slf4j-api" % "1.7.25",
+    "ch.qos.logback" % "logback-classic" % "1.2.3" % Test,
     "org.scalatest" %% "scalatest" % "3.0.5" % Test
   ),
   scalaVersion := "2.12.6",

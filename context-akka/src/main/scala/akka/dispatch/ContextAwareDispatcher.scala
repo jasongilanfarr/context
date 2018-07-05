@@ -6,6 +6,9 @@ import akka.actor.ActorCell
 import akka.event.Logging.Error
 import com.typesafe.config.Config
 import org.thisamericandream.context.{Context, ContextPropagatingExecutorService}
+import java.util
+
+import org.slf4j.MDC
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -48,10 +51,10 @@ class ContextAwareDispatcher(_configurator: MessageDispatcherConfigurator,
       shutdownTimeout
     ) {
 
-  case class Wrapper(message: Any, context: Context.ContextMap)
+  case class Wrapper(message: Any, context: Context.ContextMap, mdc: Option[util.Map[String, String]])
 
   override protected[akka] def dispatch(receiver: ActorCell, invocation: Envelope): Unit = {
-    super.dispatch(receiver, invocation.copy(Wrapper(invocation.message, Context.get())))
+    super.dispatch(receiver, invocation.copy(Wrapper(invocation.message, Context.get(), Option(MDC.getCopyOfContextMap))))
   }
 
   override protected[akka] def registerForExecution(mbox: Mailbox,
@@ -92,8 +95,8 @@ class ContextAwareDispatcher(_configurator: MessageDispatcherConfigurator,
       if (next.isDefined) {
         if (Mailbox.debug) println(mbox.actor.self + " processing message " + next.get)
         next.get match {
-          case env @ Envelope(Wrapper(message, context), _) =>
-            Context.withContext(context)(() => mbox.actor.invoke(env.copy(message = message)))
+          case env @ Envelope(Wrapper(message, context, mdc), _) =>
+            Context.withContext(context, mdc)(() => mbox.actor.invoke(env.copy(message = message)))
           case env: Envelope =>
             mbox.actor.invoke(env)
         }
