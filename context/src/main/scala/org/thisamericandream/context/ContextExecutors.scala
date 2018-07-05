@@ -25,15 +25,15 @@ object ContextExecutors {
     ContextPropagatingExecutorService(Executors.newSingleThreadExecutor(threadFactory))
 
   def newSingleThreadScheduledExecutor(): ScheduledExecutorService =
-    ContextPropagatingScheduledScheduledExecutorService(Executors.newSingleThreadScheduledExecutor())
+    ContextPropagatingScheduledExecutorService(Executors.newSingleThreadScheduledExecutor())
 
   def newSingleThreadScheduledExecutor(threadFactory: ThreadFactory): ScheduledExecutorService =
-    ContextPropagatingScheduledScheduledExecutorService(Executors.newSingleThreadScheduledExecutor(threadFactory))
+    ContextPropagatingScheduledExecutorService(Executors.newSingleThreadScheduledExecutor(threadFactory))
 
   def newScheduledThreadPool(corePoolSize: Int): ScheduledExecutorService =
-    ContextPropagatingScheduledScheduledExecutorService(Executors.newScheduledThreadPool(corePoolSize))
+    ContextPropagatingScheduledExecutorService(Executors.newScheduledThreadPool(corePoolSize))
 
   def newScheduledThreadPool(corePoolSize: Int, threadFactory: ThreadFactory): ScheduledExecutorService =
-    ContextPropagatingScheduledScheduledExecutorService(Executors.newScheduledThreadPool(corePoolSize, threadFactory))
+    ContextPropagatingScheduledExecutorService(Executors.newScheduledThreadPool(corePoolSize, threadFactory))
 
 }

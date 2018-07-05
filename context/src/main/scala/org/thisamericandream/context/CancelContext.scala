@@ -4,6 +4,10 @@ import org.thisamericandream.context.concurrent.Atomic
 
 import scala.collection.mutable
 
+sealed trait CancelReason
+case object TimedOut extends CancelReason
+case class UserCancelled[T](reason: T) extends CancelReason
+
 /** Cancel Context provides <b>opt-in</b> cancellation support.
   * Unlike other cancellation libraries which tend to either use InterruptedException
   * or simply return to the caller/throw with a Cancellation Error and continue computing,
@@ -16,54 +20,57 @@ import scala.collection.mutable
   * Cancellation listener support is provided to support things like event loops or other alternatives where
   * checking the context is non-trivial.
   */
-final class CancelContext private (private var cancelled: Boolean = false,
-                                   private var listeners: Atomic[mutable.ArrayBuffer[() => Unit]] = Atomic(
+final class CancelContext private (private var cancelReason: Option[CancelReason] = None,
+                                   private var listeners: Atomic[mutable.ArrayBuffer[CancelReason => Unit]] = Atomic(
                                      mutable.ArrayBuffer.empty)) {
-  def cancel(): Unit = {
-    if (!cancelled) {
-      cancelled = true
-      notifyListeners()
+  def cancel(reason: CancelReason): Unit = {
+    if (cancelReason.isEmpty) {
+      cancelReason = Some(reason)
+      notifyListeners(reason)
     }
   }
 
-  def isCancelled: Boolean = cancelled
+  def isCancelled: Boolean = cancelReason.isDefined
 
-  def onCancel(l: () => Unit): Unit = {
-    if (cancelled) {
-      // if a cancel listener was added and the context is already cancelled,
-      // the caller likely deosn't expect to be called within it's own stack frame.
-      global.execute(() => l())
-    } else {
-      listeners(_ += l)
-    }
+  def reason: Option[CancelReason] = cancelReason
+
+  def onCancel(listener: CancelReason => Unit): Unit = {
+    // if a cancel listener was added and the context is already cancelled,
+    // the caller likely doesn't expect to be called within it's own stack frame.
+    cancelReason.fold[Unit](listeners(_ += listener))(reason => global.execute(() => Context.clearContext(() => listener(reason))))
   }
 
-  private def notifyListeners(): Unit = {
+  private def notifyListeners(cancelReason: CancelReason): Unit = {
+    Context.clearContext(() =>
     listeners { l =>
-      l.foreach(_.apply())
-      mutable.ArrayBuffer.empty[() => Unit]
-    }
+      l.foreach(_.apply(cancelReason))
+      mutable.ArrayBuffer.empty[CancelReason => Unit]
+    })
   }
 }
 
 object CancelContext {
-  private[context] val key = new ContextKey[CancelContext] {}
+  case object CancelKey extends ContextKey[CancelContext] {}
 
-  def cancel(): Unit = {
-    Context.get(key).foreach(_.cancel())
+  def cancel(reason: CancelReason): Unit = {
+    Context.get(CancelKey).foreach(_.cancel(reason))
+  }
+
+  def reason: Option[CancelReason] = {
+    Context.get(CancelKey).flatMap(_.cancelReason)
   }
 
   def isCancelled: Boolean = {
-    Context.get(key).exists(_.cancelled)
+    Context.get(CancelKey).exists(_.cancelReason.isDefined)
   }
 
-  def onCancel(f: () => Unit): Unit = {
-    Context.get(key).foreach(_.onCancel(f))
+  def onCancel(f: CancelReason => Unit): Unit = {
+    Context.get(CancelKey).foreach(_.onCancel(f))
   }
 
   def withCancellation[R](f: () => R): (R, CancelContext) = {
     val ctx = new CancelContext()
-    Context.get(key).foreach(_.onCancel(() => ctx.cancel()))
-    (Context.withContext(key, ctx)(f), ctx)
+    Context.get(CancelKey).foreach(_.onCancel(reason => ctx.cancel(reason)))
+    (Context.withContext(CancelKey, ctx)(f), ctx)
   }
 }

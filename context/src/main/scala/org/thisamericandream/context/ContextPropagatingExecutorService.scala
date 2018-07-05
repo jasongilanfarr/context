@@ -27,7 +27,7 @@ case class ContextPropagatingExecutorService(service: ExecutorService) extends A
 }
 
 /** Scheduled Executor Service that propagates [[Context]] */
-case class ContextPropagatingScheduledScheduledExecutorService(service: ScheduledExecutorService)
+case class ContextPropagatingScheduledExecutorService(service: ScheduledExecutorService)
     extends AbstractExecutorService
     with ScheduledExecutorService {
   override def schedule(command: Runnable, delay: Long, unit: TimeUnit): ScheduledFuture[_] =
