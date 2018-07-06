@@ -19,7 +19,9 @@ class ContextTests extends Spec {
     }
     "restore the previous value" in {
       val (childResult, parentResult) = Context.withContext(Key, "parent") { () =>
-        val child = Context.withContext(Key, "child") { () => Context.get(Key) }
+        val child = Context.withContext(Key, "child") { () =>
+          Context.get(Key)
+        }
         (child, Context.get(Key))
       }
       childResult.value should equal("child")
@@ -39,7 +41,7 @@ class ContextTests extends Spec {
       Future {
         promise.success(Option(MDC.get("mdcKey")))
       }
-      whenReady(promise.future)(_.value should be ("key"))
+      whenReady(promise.future)(_.value should be("key"))
     }
     "clearing context clears MDC" in {
       MDC.put("mdcKey", "key")
@@ -47,8 +49,7 @@ class ContextTests extends Spec {
       Context.clearContext(() =>
         Future {
           promise.success(Option(MDC.get("mdcKey")))
-        }
-      )
+      })
       whenReady(promise.future)(_ shouldBe None)
     }
   }

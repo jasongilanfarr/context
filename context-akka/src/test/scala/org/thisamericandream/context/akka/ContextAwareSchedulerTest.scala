@@ -2,7 +2,7 @@ package org.thisamericandream.context.akka
 
 import akka.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
-import org.thisamericandream.context.{Context, ContextKey, Spec, global}
+import org.thisamericandream.context.{global, Context, ContextKey, Spec}
 
 import scala.concurrent.Promise
 import scala.concurrent.duration._
