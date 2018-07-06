@@ -1,14 +1,14 @@
 package org.thisamericandream.context
 
-import java.util.concurrent.{CountDownLatch, ScheduledExecutorService}
+import java.util.concurrent.ScheduledExecutorService
 
 import org.scalatest.BeforeAndAfterAll
 
-import scala.concurrent.{Future, blocking}
 import scala.concurrent.duration._
+import scala.concurrent.{Future, Promise, blocking}
 
 class TimeoutContextTests extends Spec with BeforeAndAfterAll {
-  private implicit val scheduler: ScheduledExecutorService = ContextExecutors.newScheduledThreadPool(2)
+  private implicit val scheduler: ScheduledExecutorService = ContextExecutors.newScheduledThreadPool(1)
 
   override def afterAll(): Unit = {
     scheduler.shutdown()
@@ -16,26 +16,14 @@ class TimeoutContextTests extends Spec with BeforeAndAfterAll {
 
   "Timeout Context" should {
     "there is a timeout" when {
-      "show up as timed out" in {
-        val (result, ctx) = TimeoutContext.withTimeout(1.milli) { () =>
-          Future {
-            blocking {
-              Thread.sleep(2)
-            }
-            TimeoutContext.isTimedOut
-          }
-        }
-        whenReady(result)(_ should be(true))
-        ctx.isTimedOut should be(true)
-      }
       "call the listener" in {
-        val latch = new CountDownLatch(1)
+        val promise = Promise[Boolean]()
         val (_, ctx) = TimeoutContext.withTimeout(1.milli) { () => () }
-        ctx.onTimeout(() => latch.countDown())
-        latch.await()
+        ctx.onTimeout(() => promise.success(true))
+        whenReady(promise.future) (_ should be(true))
       }
       "the cancel context should have the correct cancel reason" in {
-        val (result, _) = TimeoutContext.withTimeout(1.milli) { () =>
+        val (result, ctx) = TimeoutContext.withTimeout(1.milli) { () =>
           Future {
             blocking {
               Thread.sleep(3)
@@ -44,8 +32,8 @@ class TimeoutContextTests extends Spec with BeforeAndAfterAll {
           }
         }
         whenReady(result)(_.value should be (TimedOut))
+        ctx.isTimedOut should be(true)
       }
     }
-
   }
 }
