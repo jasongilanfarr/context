@@ -8,16 +8,16 @@ import java.util.concurrent.{ExecutorService, Executors, ScheduledExecutorServic
 object ContextExecutors {
   def newFixedThreadPool(nThreads: Int): ExecutorService =
     ContextPropagatingExecutorService(Executors.newFixedThreadPool(nThreads))
-  
+
   def newWorkstealingPool(parallelism: Int): ExecutorService =
     ContextPropagatingExecutorService(Executors.newWorkStealingPool(parallelism))
 
   def newWorkstealingPool(): ExecutorService =
     ContextPropagatingExecutorService(Executors.newWorkStealingPool())
-  
+
   def newFixedThreadPool(nThreads: Int, threadFactory: ThreadFactory): ExecutorService =
     ContextPropagatingExecutorService(Executors.newFixedThreadPool(nThreads, threadFactory))
-  
+
   def newSingleThreadExecutor(): ExecutorService =
     ContextPropagatingExecutorService(Executors.newSingleThreadExecutor())
 

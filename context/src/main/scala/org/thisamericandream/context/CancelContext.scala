@@ -37,14 +37,15 @@ final class CancelContext private (private var cancelReason: Option[CancelReason
   def onCancel(listener: CancelReason => Unit): Unit = {
     // if a cancel listener was added and the context is already cancelled,
     // the caller likely doesn't expect to be called within it's own stack frame.
-    cancelReason.fold[Unit](listeners(_ += listener))(reason => global.execute(() => Context.clearContext(() => listener(reason))))
+    cancelReason.fold[Unit](listeners(_ += listener))(reason =>
+      global.execute(() => Context.clearContext(() => listener(reason))))
   }
 
   private def notifyListeners(cancelReason: CancelReason): Unit = {
     Context.clearContext(() =>
-    listeners { l =>
-      l.foreach(_.apply(cancelReason))
-      mutable.ArrayBuffer.empty[CancelReason => Unit]
+      listeners { l =>
+        l.foreach(_.apply(cancelReason))
+        mutable.ArrayBuffer.empty[CancelReason => Unit]
     })
   }
 }

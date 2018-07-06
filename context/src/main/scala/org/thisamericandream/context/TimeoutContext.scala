@@ -4,10 +4,10 @@ import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 
 import scala.concurrent.duration.FiniteDuration
 
-final case class TimeoutContext private(private val cancelContext: CancelContext) {
+final case class TimeoutContext private (private val cancelContext: CancelContext) {
   def isTimedOut: Boolean = cancelContext.reason.exists {
     case TimedOut => true
-    case _ => false
+    case _        => false
   }
 
   def onTimeout(listener: () => Unit): Unit = {
@@ -26,8 +26,9 @@ object TimeoutContext {
     Context.get(TimeoutKey).foreach(_.onTimeout(listener))
   }
 
-  def withTimeout[R](timeout: FiniteDuration)(f: () => R)(implicit scheduler: ScheduledExecutorService): (R, TimeoutContext) = {
-    val ((result, ctx), _) = CancelContext.withCancellation(()  => {
+  def withTimeout[R](timeout: FiniteDuration)(f: () => R)(
+      implicit scheduler: ScheduledExecutorService): (R, TimeoutContext) = {
+    val ((result, ctx), _) = CancelContext.withCancellation(() => {
       val cancelCtx = Context.get(CancelContext.CancelKey).get
       scheduler.schedule(new Runnable() {
         def run(): Unit = {
@@ -37,7 +38,6 @@ object TimeoutContext {
       val ctx = new TimeoutContext(cancelCtx)
       (Context.withContext(TimeoutKey, ctx)(f), ctx)
     })
-
 
     (result, ctx)
   }

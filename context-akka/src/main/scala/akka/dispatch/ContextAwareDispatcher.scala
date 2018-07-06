@@ -54,7 +54,8 @@ class ContextAwareDispatcher(_configurator: MessageDispatcherConfigurator,
   case class Wrapper(message: Any, context: Context.ContextMap, mdc: Option[util.Map[String, String]])
 
   override protected[akka] def dispatch(receiver: ActorCell, invocation: Envelope): Unit = {
-    super.dispatch(receiver, invocation.copy(Wrapper(invocation.message, Context.get(), Option(MDC.getCopyOfContextMap))))
+    super
+      .dispatch(receiver, invocation.copy(Wrapper(invocation.message, Context.get(), Option(MDC.getCopyOfContextMap))))
   }
 
   override protected[akka] def registerForExecution(mbox: Mailbox,
@@ -125,13 +126,12 @@ class ContextAwareDispatcher(_configurator: MessageDispatcherConfigurator,
   }
 }
 
-
 /** Configurator for creating [[akka.dispatch.ContextAwareDispatcher]].
   * Returns the same dispatcher instance for for each invocation
   * of the `dispatcher()` method.
   */
 class ContextAwareDispatcherConfigurator(config: Config, prerequisites: DispatcherPrerequisites)
-  extends MessageDispatcherConfigurator(config, prerequisites) {
+    extends MessageDispatcherConfigurator(config, prerequisites) {
 
   import akka.util.Helpers.ConfigOps
 
