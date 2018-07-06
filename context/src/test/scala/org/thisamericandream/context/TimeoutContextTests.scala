@@ -1,11 +1,11 @@
 package org.thisamericandream.context
 
-import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 
 import org.scalatest.BeforeAndAfterAll
 
+import scala.concurrent.Promise
 import scala.concurrent.duration._
-import scala.concurrent.{Future, Promise, blocking}
 
 class TimeoutContextTests extends Spec with BeforeAndAfterAll {
   private implicit val scheduler: ScheduledExecutorService = ContextExecutors.newScheduledThreadPool(1)
@@ -18,20 +18,17 @@ class TimeoutContextTests extends Spec with BeforeAndAfterAll {
     "there is a timeout" when {
       "call the listener" in {
         val promise = Promise[Boolean]()
-        val (_, ctx) = TimeoutContext.withTimeout(1.milli) { () => () }
+        val (_, ctx) = TimeoutContext.withTimeout(1.nano) { () => () }
         ctx.onTimeout(() => promise.success(true))
         whenReady(promise.future) (_ should be(true))
+        ctx.isTimedOut should be(true)
       }
       "the cancel context should have the correct cancel reason" in {
-        val (result, ctx) = TimeoutContext.withTimeout(1.milli) { () =>
-          Future {
-            blocking {
-              Thread.sleep(3)
-            }
-            CancelContext.reason
-          }
+        val promise = Promise[Option[CancelReason]]()
+        val (_, ctx) = TimeoutContext.withTimeout(1.nano) { () =>
+          scheduler.schedule(() => promise.success(CancelContext.reason), 2L, TimeUnit.NANOSECONDS)
         }
-        whenReady(result)(_.value should be (TimedOut))
+        whenReady(promise.future)(_.value should be (TimedOut))
         ctx.isTimedOut should be(true)
       }
     }

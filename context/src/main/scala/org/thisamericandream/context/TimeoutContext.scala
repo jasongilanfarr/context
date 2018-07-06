@@ -27,16 +27,18 @@ object TimeoutContext {
   }
 
   def withTimeout[R](timeout: FiniteDuration)(f: () => R)(implicit scheduler: ScheduledExecutorService): (R, TimeoutContext) = {
-    val ((result, ctx), cancelCtx) = CancelContext.withCancellation(()  => {
-      val ctx = new TimeoutContext(Context.get(CancelContext.CancelKey).get)
+    val ((result, ctx), _) = CancelContext.withCancellation(()  => {
+      val cancelCtx = Context.get(CancelContext.CancelKey).get
+      scheduler.schedule(new Runnable() {
+        def run(): Unit = {
+          Context.clearContext(() => cancelCtx.cancel(TimedOut))
+        }
+      }, timeout.toNanos, TimeUnit.NANOSECONDS)
+      val ctx = new TimeoutContext(cancelCtx)
       (Context.withContext(TimeoutKey, ctx)(f), ctx)
     })
 
-    scheduler.schedule(new Runnable() {
-      def run(): Unit = {
-        Context.clearContext(() => cancelCtx.cancel(TimedOut))
-      }
-    }, timeout.toNanos, TimeUnit.NANOSECONDS)
+
     (result, ctx)
   }
 }
