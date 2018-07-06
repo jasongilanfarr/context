@@ -1,3 +1,5 @@
+package org.thisamericandream.context.akka
+
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.TestProbe
 import org.scalatest.BeforeAndAfterAll

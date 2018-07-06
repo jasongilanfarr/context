@@ -2,11 +2,17 @@ package org.thisamericandream.context
 
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService}
 
+import org.scalatest.BeforeAndAfterAll
+
 import scala.concurrent.{Future, blocking}
 import scala.concurrent.duration._
 
-class TimeoutContextTests extends Spec {
+class TimeoutContextTests extends Spec with BeforeAndAfterAll {
   private implicit val scheduler: ScheduledExecutorService = ContextExecutors.newScheduledThreadPool(2)
+
+  override def afterAll(): Unit = {
+    scheduler.shutdown()
+  }
 
   "Timeout Context" should {
     "there is a timeout" when {
