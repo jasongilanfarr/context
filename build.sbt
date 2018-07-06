@@ -2,6 +2,7 @@ enablePlugins(GitVersioning, GitBranchPrompt)
 
 
 val commonSettings = Seq(
+  organization := "org.thisamericandream",
   libraryDependencies := Seq(
     "org.scala-lang" % "scala-library" % scalaVersion.value,
     "org.slf4j" % "slf4j-api" % "1.7.25",
